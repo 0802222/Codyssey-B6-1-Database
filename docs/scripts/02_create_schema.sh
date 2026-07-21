@@ -10,9 +10,10 @@ if [[ ! -f "${SCHEMA_FILE}" ]]; then
   exit 11
 fi
 
-echo "[INFO] create database: ${DB_NAME}"
-sudo mysql -u root <<SQL
-CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;
+echo "[INFO] reset database: ${DB_NAME}"
+sudo mysql <<SQL
+DROP DATABASE IF EXISTS \`${DB_NAME}\`;
+CREATE DATABASE \`${DB_NAME}\`;
 USE \`${DB_NAME}\`;
 SOURCE ${SCHEMA_FILE};
 SQL
