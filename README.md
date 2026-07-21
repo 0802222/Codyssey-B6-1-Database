@@ -12,7 +12,11 @@ codyssey-b5-1/
 │  │  ├─ query.sql
 │  │  └─ schema.sql
 │  ├─ scripts/
-│  │  └─ provision.sh
+│  │  ├─ provision.sh
+│  │  ├─ 01_install_mysql.sh
+│  │  ├─ 02_create_schema.sh
+│  │  ├─ 03_insert_data.sh
+│  │  └─ 04_execute_query.sh
 │  └─ screenshots/
 │     ├─ b5-1_mysql_started.png
 │     ├─ b5-1_schema_created.png
@@ -84,7 +88,9 @@ codyssey-b5-1/
 # 실행 절차 (시연)
 ## 자동 스크립트
 ```bash
-provision.sh
+git clone https://github.com/0802222/Codyssey-B5-1.git \
+  && cd Codyssey-B5-1 \
+  && bash docs/scripts/provision.sh
 ```
 
 ## 수동 실행 절차
