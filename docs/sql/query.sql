@@ -1,5 +1,6 @@
 USE codyssey_mission_db;
 
+SELECT '1. 조회' AS info;
 -- 1) 기본 조회: 전체 학생 목록 (트랙 기준 정렬)
 -- 학생 테이블의 기본 조회와 ORDER BY 사용 예시
 SELECT id, name, email, track, created_at
@@ -27,6 +28,7 @@ SELECT mp.student_id, mp.mission_id, mp.status, mp.final_result
 FROM mission_progress mp
 WHERE mp.final_result = 'PENDING';
 
+SELECT '2. JOIN' AS info;
 -- 5) JOIN: 학생별 미션 제목과 상태 같이 보기 (INNER JOIN)
 -- student + mission_progress + mission 조인으로 상세 진도 정보 확인
 SELECT
@@ -83,6 +85,7 @@ LEFT JOIN peer_review pr
  AND pr.reviewee_student_id = mp.student_id
 WHERE pr.id IS NULL;
 
+SELECT '3. 집계' AS info;
 -- 9) 집계: 미션별 참여 학생 수 (COUNT + GROUP BY)
 -- mission_progress 기준으로 각 미션에 몇 명이 참여했는지 집계
 SELECT
@@ -116,6 +119,7 @@ INNER JOIN mission m ON pr.mission_id = m.id
 GROUP BY m.id, m.title, pr.review_result
 ORDER BY m.title, pr.review_result;
 
+SELECT '4. 서브쿼리' AS info;
 -- 12) 서브쿼리: 동료평가를 한 번도 받아보지 않은 학생 찾기
 -- 서브쿼리로 peer_review의 reviewee 목록을 뽑고, NOT IN으로 필터링
 SELECT

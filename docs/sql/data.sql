@@ -3,16 +3,16 @@ USE codyssey_mission_db;
 -- 1) 학생 샘플 데이터 (10명 이상)
 INSERT INTO student (name, email, track)
 VALUES
-('김백엔',  'kimbe_backend@example.com',   '백엔드'),
-('이프론',  'lee_frontend@example.com',    '프론트엔드'),
-('박데브',  'park_devops@example.com',     'DevOps'),
-('최데이터','choi_data@example.com',       '데이터'),
-('정풀스',  'jung_fullstack@example.com',  '풀스택'),
-('한AI',    'han_ai@example.com',          'AI'),
-('오서버',  'oh_server@example.com',       '시스템'),
-('유웹',    'yoo_web@example.com',         '웹'),
-('장코디',  'jang_codyssey@example.com',   '백엔드'),
-('신알고',  'shin_algo@example.com',       '알고리즘');
+('김백엔',  'kimbe_backend@example.com',   'AI SW Basic'),
+('이프론',  'lee_frontend@example.com',    'AI SW Basic'),
+('박데브',  'park_devops@example.com',     'AI SW Basic'),
+('최데이터','choi_data@example.com',       'AI SW Basic'),
+('정풀스',  'jung_fullstack@example.com',  'AI SW Advanced'),
+('한AI',    'han_ai@example.com',          'AI SW Advanced'),
+('오서버',  'oh_server@example.com',       'AI SW Advanced'),
+('유웹',    'yoo_web@example.com',         'AI SW Master'),
+('장코디',  'jang_codyssey@example.com',   'AI SW Basic'),
+('신알고',  'shin_algo@example.com',       'AI SW Master');
 
 -- 2) 미션 샘플 데이터 (10개 이상)
 INSERT INTO mission (title, category, difficulty, estimated_hours)

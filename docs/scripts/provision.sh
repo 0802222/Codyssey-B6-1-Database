@@ -12,7 +12,7 @@ echo "[INFO] create schema"
 bash "${SCRIPT_DIR}/02_create_schema.sh" "${DB_NAME}" "${PROJECT_DIR}"
 
 echo "[INFO] insert sample data"
-bash "${SCRIPT_DIR}/03_insert_query.sh" "${DB_NAME}" "${PROJECT_DIR}"
+bash "${SCRIPT_DIR}/03_insert_data.sh" "${DB_NAME}" "${PROJECT_DIR}"
 
 echo "[INFO] execute core queries"
 bash "${SCRIPT_DIR}/04_execute_query.sh" "${DB_NAME}" "${PROJECT_DIR}"

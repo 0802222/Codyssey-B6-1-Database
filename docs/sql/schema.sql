@@ -3,7 +3,7 @@ CREATE TABLE student (
     id         BIGINT AUTO_INCREMENT PRIMARY KEY,
     name       VARCHAR(50) NOT NULL,
     email      VARCHAR(100) NOT NULL UNIQUE,
-    track      ENUM('AI SW Basic', 'AI SW Advanced', 'AI SW Master') NOT NULL DEFAULT 'AI SW Basic'
+    track      ENUM('AI SW Basic', 'AI SW Advanced', 'AI SW Master') NOT NULL DEFAULT 'AI SW Basic',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
