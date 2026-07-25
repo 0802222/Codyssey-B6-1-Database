@@ -20,6 +20,8 @@ codyssey-b5-1/
 │  └─ screenshots/
 │     ├─ b5-1_mysql_started.png
 │     ├─ b5-1_schema_created.png
+│     ├─ b5-1_table_created.png
+│     ├─ b5-1_table_schema_described.png
 │     ├─ b5-1_data_inserted.png
 │     └─ b5-1_queries_result.png
 └─ README.md
@@ -88,7 +90,9 @@ codyssey-b5-1/
 # 실행 절차 (시연)
 ## 자동 스크립트
 ```bash
-git clone https://github.com/0802222/Codyssey-B5-1.git \
+sudo apt-get update \
+  && sudo apt-get install -y git \
+  && git clone https://github.com/0802222/Codyssey-B5-1.git \
   && cd Codyssey-B5-1 \
   && bash docs/scripts/provision.sh
 ```
@@ -134,7 +138,7 @@ git clone https://github.com/0802222/Codyssey-B5-1.git \
     # 또는
     sudo systemctl start mysql
     ```
-
+    
 3. 서비스 상태 확인 (active)
     ```bash
     sudo systemctl status mysql
@@ -152,6 +156,9 @@ git clone https://github.com/0802222/Codyssey-B5-1.git \
     ```sql
     SHOW DATABASES;
     ```
+    
+    ![alt text](docs/screenshots/b5-1_schema_created.png)
+
 
 ## 3. DB 생성
 1. DB 생성
@@ -191,6 +198,21 @@ git clone https://github.com/0802222/Codyssey-B5-1.git \
 
 (* 자세한 내용은 `docs/sql/schema.sql` 파일 참고)
 
+### 4-1. 테이블 생성
+위에서 설계한 4개 테이블을 생성한다.    
+```sql
+CREATE TABLE 테이블명 (
+    컬럼 타입 제약조건,
+    컬럼 타입 제약조건
+);
+```
+
+### 4-2. 테이블 구조 조회
+```sql
+DESC 테이블명;
+```
+
+![alt text](docs/screenshots/b5-1_table_schema_described.png)
 <br>
 <br>
 
