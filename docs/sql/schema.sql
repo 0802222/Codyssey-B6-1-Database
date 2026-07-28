@@ -15,7 +15,7 @@ CREATE TABLE mission (
     difficulty      TINYINT,
     estimated_hours INT,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CHECK (difficulty BETWEEN 1 AND 5),
+    CHECK (difficulty BETWEEN 1 AND 3),
     CHECK (estimated_hours >= 0)
 ) ENGINE=InnoDB;
 
@@ -24,34 +24,32 @@ CREATE TABLE mission_progress (
     id           BIGINT AUTO_INCREMENT PRIMARY KEY,
     student_id   BIGINT NOT NULL,
     mission_id   BIGINT NOT NULL,
-    status       ENUM('NOT_STARTED', 'IN_PROGRESS', 'SUBMITTED', 'DONE') NOT NULL DEFAULT 'NOT_STARTED',
-    submitted_at DATETIME,
-    updated_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    final_result ENUM('PENDING', 'PASS', 'FAIL') NOT NULL DEFAULT 'PENDING',
+    attempt_no   TINYINT NOT NULL,
+    status       ENUM('NOT_STARTED', 'IN_PROGRESS', 'DONE') NOT NULL DEFAULT 'NOT_STARTED',
+    reviewed_at DATETIME,
+    final_result ENUM('NOT_STARTED', 'IN_PROGRESS', 'PASS', 'FAIL') NOT NULL DEFAULT 'NOT_STARTED',
     CONSTRAINT fk_progress_student
         FOREIGN KEY (student_id) REFERENCES student(id),
     CONSTRAINT fk_progress_mission
         FOREIGN KEY (mission_id) REFERENCES mission(id),
-    CONSTRAINT uq_progress_student_mission
-        UNIQUE (student_id, mission_id)
+    CONSTRAINT up_progress_student_mission
+        UNIQUE (student_id, mission_id, attempt_no);
 ) ENGINE=InnoDB;
 
 -- 4) 동료평가
 CREATE TABLE peer_review (
     id                  BIGINT AUTO_INCREMENT PRIMARY KEY,
     mission_id          BIGINT NOT NULL,
+    attempt_no          TINYINT NOT NULL,
     reviewer_student_id BIGINT NOT NULL,
     reviewee_student_id BIGINT NOT NULL,
     review_result       ENUM('PASS', 'FAIL') NOT NULL,
     comment             VARCHAR(500),
     reviewed_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_review_mission
-        FOREIGN KEY (mission_id) REFERENCES mission(id),
-    CONSTRAINT fk_review_reviewer
-        FOREIGN KEY (reviewer_student_id) REFERENCES student(id),
-    CONSTRAINT fk_review_reviewee
-        FOREIGN KEY (reviewee_student_id) REFERENCES student(id),
+    CONSTRAINT fk_review_reviewee_progress
+        FOREIGN KEY (reviewee_student_id, mission_id, attempt_no)
+        REFERENCES mission_progress (student_id, mission_id, attempt_no),
     CONSTRAINT uq_peer_review_unique_pair
-        UNIQUE (mission_id, reviewer_student_id, reviewee_student_id),
+        UNIQUE (mission_id, attempt_no, reviewer_student_id, reviewee_student_id),
     CHECK (reviewer_student_id <> reviewee_student_id)
 ) ENGINE=InnoDB;

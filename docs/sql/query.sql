@@ -17,16 +17,16 @@ LIMIT 5;
 
 -- 3) 진행 중인 미션 목록
 SELECT '진행 중인 미션 목록' AS info;
-SELECT mp.id, mp.student_id, mp.mission_id, mp.status, mp.updated_at
+SELECT mp.id, mp.student_id, mp.mission_id, mp.attempt_no, mp.status, mp.reviewed_at
 FROM mission_progress mp
 WHERE mp.status = 'IN_PROGRESS'
-ORDER BY mp.updated_at DESC;
+ORDER BY mp.id DESC;
 
--- 4) 아직 평가 결과가 PENDING인 진도
-SELECT '아직 평가 결과가 PENDING인 진도' AS info;
-SELECT mp.student_id, mp.mission_id, mp.status, mp.final_result
+-- 4) 아직 평가 결과가 확정되지 않은 진도
+SELECT '아직 최종 결과가 확정되지 않은 진도' AS info;
+SELECT mp.student_id, mp.mission_id, mp.attempt_no, mp.status, mp.final_result
 FROM mission_progress mp
-WHERE mp.final_result = 'PENDING';
+WHERE mp.final_result IN ('NOT_STARTED', 'IN_PROGRESS');
 
 
 
@@ -34,33 +34,36 @@ SELECT '2. JOIN' AS info;
 -- 5) 학생별 미션 제목과 상태 같이 보기 (INNER JOIN)
 SELECT '학생별 미션 제목과 상태 같이 보기 (INNER JOIN)' AS info;
 SELECT
-    s.name        AS student_name,
-    m.title       AS mission_title,
+    s.name  AS student_name,
+    m.title AS mission_title,
+    mp.attempt_no,
     mp.status,
     mp.final_result,
-    mp.updated_at
+    mp.reviewed_at
 FROM mission_progress mp
 INNER JOIN student s ON mp.student_id = s.id
 INNER JOIN mission  m ON mp.mission_id = m.id
-ORDER BY s.name, m.title;
+ORDER BY s.name, m.title, mp.attempt_no;
 
 -- 6) 특정 미션(B3-1)에 대한 학생별 진도 현황 (INNER JOIN + WHERE)
 SELECT '특정 미션(B3-1)에 대한 학생별 진도 현황 (INNER JOIN + WHERE)' AS info;
 SELECT
     s.name AS student_name,
+    mp.attempt_no,
     mp.status,
     mp.final_result,
-    mp.submitted_at
+    mp.reviewed_at
 FROM mission_progress mp
 INNER JOIN student s ON mp.student_id = s.id
 INNER JOIN mission  m ON mp.mission_id = m.id
 WHERE m.title = 'B3-1 Codyssey 미션 관리 DB 설계'
-ORDER BY s.name;
+ORDER BY s.name, mp.attempt_no;
 
 -- 7) 동료평가 포함해서 학생별 평가 내역 보기 (INNER JOIN)
 SELECT '동료평가 포함해서 학생별 평가 내역 보기 (INNER JOIN)' AS info;
 SELECT
     m.title               AS mission_title,
+    pr.attempt_no,
     reviewer.name         AS 평가자,
     reviewee.name         AS 피평가자,
     pr.review_result,
@@ -70,13 +73,14 @@ FROM peer_review pr
 INNER JOIN mission  m       ON pr.mission_id = m.id
 INNER JOIN student reviewer ON pr.reviewer_student_id = reviewer.id
 INNER JOIN student reviewee ON pr.reviewee_student_id = reviewee.id
-ORDER BY m.title, reviewee.name;
+ORDER BY m.title, pr.attempt_no, reviewee.name;
 
 -- 8) 진도는 있는데 동료평가가 없는 학생-미션 찾기 (LEFT JOIN)
 SELECT '진도는 있는데 동료평가가 없는 학생-미션 찾기 (LEFT JOIN)' AS info;
 SELECT
     s.name  AS student_name,
     m.title AS mission_title,
+    mp.attempt_no,
     mp.status,
     mp.final_result
 FROM mission_progress mp
@@ -84,6 +88,7 @@ INNER JOIN student s ON mp.student_id = s.id
 INNER JOIN mission  m ON mp.mission_id = m.id
 LEFT JOIN peer_review pr
   ON pr.mission_id = mp.mission_id
+ AND pr.attempt_no = mp.attempt_no
  AND pr.reviewee_student_id = mp.student_id
 WHERE pr.id IS NULL;
 
@@ -118,15 +123,13 @@ SELECT
     review_result,
     count_by_result,
     ROUND(
-        count_by_result
-        / SUM(count_by_result) OVER (PARTITION BY mission_title)
-        * 100,
+        count_by_result / SUM(count_by_result) OVER (PARTITION BY mission_title) * 100,
         1
     ) AS ratio_percent
 FROM (
     SELECT
-        m.title          AS mission_title,
-        r.review_result  AS review_result,
+        m.title         AS mission_title,
+        r.review_result AS review_result,
         COALESCE(COUNT(pr.id), 0) AS count_by_result
     FROM mission m
     CROSS JOIN (
@@ -154,45 +157,48 @@ WHERE s.id NOT IN (
     FROM peer_review pr
 );
 
+SELECT '5. 업데이트/삭제/인덱스' AS info;
 -- 13) UPDATE: 동료평가 집계를 반영해 final_result 갱신
 UPDATE mission_progress mp
 JOIN (
     SELECT
         pr.reviewee_student_id AS student_id,
         pr.mission_id,
+        pr.attempt_no,
         COUNT(*) AS review_count,
         SUM(CASE WHEN pr.review_result = 'PASS' THEN 1 ELSE 0 END) AS pass_count,
         SUM(CASE WHEN pr.review_result = 'FAIL' THEN 1 ELSE 0 END) AS fail_count
     FROM peer_review pr
-    GROUP BY pr.reviewee_student_id, pr.mission_id
+    GROUP BY pr.reviewee_student_id, pr.mission_id, pr.attempt_no
 ) agg
   ON agg.student_id = mp.student_id
  AND agg.mission_id = mp.mission_id
+ AND agg.attempt_no = mp.attempt_no
 SET mp.final_result =
     CASE
         WHEN agg.review_count = 3 AND agg.pass_count = 3 THEN 'PASS'
         WHEN agg.review_count = 3 AND agg.fail_count >= 1 THEN 'FAIL'
-        ELSE 'PENDING'
+        ELSE mp.final_result
     END,
-    mp.updated_at = CURRENT_TIMESTAMP;
+    mp.reviewed_at = CURRENT_TIMESTAMP;
 
--- 14) UPDATE: 특정 미션의 상태를 수동으로 DONE으로 변경
-UPDATE mission_progress
-SET status = 'DONE',
-    updated_at = CURRENT_TIMESTAMP
-WHERE mission_id = 3   -- B3-1 Codyssey 미션 관리 DB 설계
-  AND status = 'SUBMITTED';
+-- 14) 동료평가 집계 후 진도 결과 확인
+SELECT '동료평가 집계 후 진도 결과 확인' AS info;
+SELECT student_id, mission_id, attempt_no, status, final_result, reviewed_at
+FROM mission_progress
+ORDER BY student_id, mission_id, attempt_no;
 
 -- 15) DELETE: 테스트용 동료평가 데이터 삭제
 DELETE FROM peer_review
 WHERE mission_id = 1
+  AND attempt_no = 1
   AND reviewer_student_id = 5
   AND reviewee_student_id = 3;
 
 -- 16) 인덱스: 동료평가 조회용 인덱스 생성
-CREATE INDEX idx_peer_review_reviewee_mission
-ON peer_review (reviewee_student_id, mission_id);
+CREATE INDEX idx_peer_review_reviewee_mission_attempt
+ON peer_review (reviewee_student_id, mission_id, attempt_no);
 
 -- 17) 인덱스: 진도 조회용 인덱스 생성
-CREATE INDEX idx_mission_progress_mission_status
-ON mission_progress (mission_id, status);
+CREATE INDEX idx_mission_progress_mission_status_attempt
+ON mission_progress (mission_id, status, attempt_no);

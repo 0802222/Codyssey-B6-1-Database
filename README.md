@@ -184,21 +184,93 @@ sudo apt-get update \
 
 ## 4. 테이블 설계
 ### 주제 : Codyssey 미션관리 
+0. 공통 (자료형 선택 이유)
+- PK는 INT 보다 확장성을 고려해 BIGINT 사용, AUTO_INCREMENT 적용, 또한 PK 는 NOT NULL 이며 UNIQUE 함
+- 가변 데이터는 VARCHAR
+- 빈 값 방지를 위한 NOT NULL 제약 조건
+- 중복불가 데이터는 UNIQUE 제약 조건
+- 상태 값 관리는 ENUM 적용
+- 날짜 데이터는 DATETIME 으로 시간까지 확보, 가입일, 미션시작일 등의 컬럼은 현재 시간 적용을 위해 CURRENT_TIMESTAMP 처리
+- 범위체크는 CHECK 제약 조건
+
 1. `학생 정보` (student)
     
     : id, 이름, 이메일, 과정, 가입일
+    ```sql
+    -- 1) 학생 정보
+    CREATE TABLE student (
+        id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+        name       VARCHAR(50) NOT NULL,
+        email      VARCHAR(100) NOT NULL UNIQUE,
+        track      ENUM('AI SW Basic', 'AI SW Advanced', 'AI SW Master') NOT NULL DEFAULT 'AI SW Basic',
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB;
+    ```
 2. `미션 정보` (mission)
     
     : id, 미션 제목, 카테고리, 난이도, 예상 소요시간, 미션 시작일
+    ```sql
+    -- 2) 미션 정보
+    CREATE TABLE mission (
+        id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+        title           VARCHAR(100) NOT NULL,
+        category ENUM('SERVER_OPS', 'BACKEND', 'FRONTEND','DATA', 'AI_SERVING', 'WEB_BASIC') NOT NULL,
+        difficulty      TINYINT,
+        estimated_hours INT,
+        created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CHECK (difficulty BETWEEN 1 AND 3),
+        CHECK (estimated_hours >= 0)
+    ) ENGINE=InnoDB;
+    ```
 3. `진도 관리` (mission_progress)
     
     : id, 학생 id, 미션 id, 진행 상태, 미션 제출일, 수정일, 최종 결과
+    - FK 적용으로 진도는 존재하는 학생이나 미션에 대해서만 만들어지도록 해서 무결성을 확보함
+    ```sql
+    -- 3) 진도 관리
+    CREATE TABLE mission_progress (
+        id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+        student_id   BIGINT NOT NULL,
+        mission_id   BIGINT NOT NULL,
+        attempt_no   TINYINT NOT NULL,
+        status       ENUM('NOT_STARTED', 'IN_PROGRESS', 'DONE') NOT NULL DEFAULT 'NOT_STARTED',
+        reviewed_at DATETIME,
+        final_result ENUM('NOT_STARTED', 'IN_PROGRESS', 'PASS', 'FAIL') NOT NULL DEFAULT 'NOT_STARTED',
+        CONSTRAINT fk_progress_student
+            FOREIGN KEY (student_id) REFERENCES student(id),
+        CONSTRAINT fk_progress_mission
+            FOREIGN KEY (mission_id) REFERENCES mission(id),
+        CONSTRAINT up_progress_student_mission
+            UNIQUE (student_id, mission_id, attempt_no);
+    ) ENGINE=InnoDB;
+    ```
 4. `동료 평가` (peer_review)
     
     : id, 평가자 id, 피평가자 id, 평가 결과 (PASS / FAIL), 코멘트, 작성일
-
-
-    (* 자세한 내용은 `docs/sql/schema.sql` 파일 참고)
+    - FK 적용으로 평가는 존재하는 미션에 대해서만 가능함
+    - FK 적용으로 평가자/피평가자는 존재하는 학생이어야 함
+    - FK 적용으로 attemp_no로 실제로 도전한 기록이 있어야 평가 코멘트를 남길 수 있음
+    - UNIQUE 적용으로 같은 미션에서 동일 평가자가 동일 리뷰이를 중복 평가하는 것을 막음
+    - CHECK 적용으로 자기 자신을 평가하는 레코드는 허용하지 않음
+    ```sql
+    -- 4) 동료평가
+    CREATE TABLE peer_review (
+        id                  BIGINT AUTO_INCREMENT PRIMARY KEY,
+        mission_id          BIGINT NOT NULL,
+        attempt_no          TINYINT NOT NULL,
+        reviewer_student_id BIGINT NOT NULL,
+        reviewee_student_id BIGINT NOT NULL,
+        review_result       ENUM('PASS', 'FAIL') NOT NULL,
+        comment             VARCHAR(500),
+        reviewed_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_review_reviewee_progress
+            FOREIGN KEY (reviewee_student_id, mission_id, attempt_no)
+            REFERENCES mission_progress (student_id, mission_id, attempt_no),
+        CONSTRAINT uq_peer_review_unique_pair
+            UNIQUE (mission_id, attempt_no, reviewer_student_id, reviewee_student_id),
+        CHECK (reviewer_student_id <> reviewee_student_id)
+    ) ENGINE=InnoDB;
+    ```
 
 <br>
 
@@ -335,7 +407,6 @@ DESC 테이블명;
 ```
 
 ```sql
-
 -- 특정 미션(B3-1)에 대한 학생별 진도 현황 (INNER JOIN + WHERE)
 +----------------------------------------------------------------------------+
 +--------------+-------------+--------------+---------------------+
@@ -375,7 +446,6 @@ DESC 테이블명;
 ```
 
 ```sql
-
 -- 진도는 있는데 동료평가가 없는 학생-미션 찾기 (LEFT JOIN
 +-----------------------------------------------------------------------------+
 +--------------+-----------------------------------------------------+-------------+--------------+
@@ -395,6 +465,7 @@ DESC 테이블명;
 ```
 
 ## 6-3. 집계 (3개 이상)
+
 ```sql
 -- 미션별 참여 학생 수 (COUNT + GROUP BY)
 +------------------------------------------------+
@@ -414,7 +485,6 @@ DESC 테이블명;
 ```
 
 ```sql
-
 -- 학생별 완수한 미션 수 (COUNT + GROUP BY)
 +---------------------------------------------------+
 +--------------+-------------------------+
@@ -460,8 +530,8 @@ DESC 테이블명;
 ```
 
 ## 6-4. 서브쿼리 (1개 이상)
-```sql
 
+```sql
 --동료평가를 한 번도 받아보지 않은 학생 찾기
 +--------------------------------------------------------------+
 +----+-----------+----------------------------+
@@ -474,6 +544,7 @@ DESC 테이블명;
 
 ## 6-5. 데이터 수정 및 삭제 (2개 이상)
 수정 전
+
 ```sql
 mysql> select * from mission_progress;
 +----+------------+------------+-------------+---------------------+---------------------+--------------+
@@ -506,6 +577,7 @@ mysql> select * from mission_progress;
 UPDATE: 동료평가 집계를 반영해 final_result 갱신
 
 수정 후
+
 ```sql
 mysql> select * from mission_progress;
 +----+------------+------------+-------------+---------------------+---------------------+--------------+
@@ -557,10 +629,15 @@ ON 테이블명 (컬럼1, 컬럼2);
         이유 : FK 검사를 위해 부모/자식 레코드를 자주 찾고, JOIN을 많이 하므로, 이 컬럼에 인덱스가 없으면 성능이 크게 떨어지기 때문이다.
 
 인덱스 조회
+```sql
+SHOW INDEX FROM 테이블명;
+```
+
 - `Non_unique` : 0 (중복을 허용하지 않는 인덱스, PRIMARY KEY, UNIQUE 제약 등), 1 (중복 허용)
 - `Seq_in_index` : 인덱스 안에서 컬럼의 순서 (1부터 시작)
 - `Index_type` : 인덱스 자료구조 (보통 BTREE)
 - `Cardinality` : 대략적인 유니크 값 개수 추정치
+
 ```sql
 mysql> SHOW INDEX FROM peer_review;
 +-------------+------------+----------------------------------+--------------+---------------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
@@ -740,7 +817,7 @@ SQL에서 네 가지 기본 명령은 데이터 라이프사이클과 1:1로 대
 # 동료평가 시 나눈 이야기 들
 
 ## PK 에 사용하는 id 컬럼 자료형이 BIGINT 외 추가적으로 있을까요?
-저는 확장성을 고려해 PK 를 INT 가 아닌 BIGINT 로 사용했고, 
+나는 확장성을 고려해 PK 를 INT 가 아닌 BIGINT 로 사용했고, 
 평가자분이 snowflake 같은 타입도 있다고 해서 같이 검색해봤다.
 
 - `UUID` (v4 랜덤,  v1/v6(비표준)/v7(정렬 친화적)는 시간 기반/순서 보존)
@@ -753,7 +830,7 @@ SQL에서 네 가지 기본 명령은 데이터 라이프사이클과 1:1로 대
 <br>
 
 ## SQL에서 DATETIME 은 어떤식으로 저장되나요? 따로 변환이 되나요?
-날짜/시간 형식으로 `저장`되고, 문자열 형식으로 `출력`합니다.
+날짜/시간 형식으로 `저장`되고, 문자열 형식으로 `출력`한다.
 - MySQL 에서 DATETIME
     - 저장 : 날짜 + 시간 값 (내부적으로는 숫자/문자형)
     - 출력 : YYYY-MM-DD HH:MM:SS
@@ -779,7 +856,7 @@ FK 제약조건을 걸면 자식 테이블의 FK 컬럼 값은 반드시 부모 
     ```
 <br>
 
-## GROUP BY의 효과와 성능에 대해서 설명해주세요.
+## GROUP BY의 역할과 성능에 대해서 설명해주세요.
 - 역할
 
     GROUP BY는 `같은 값 끼리 묶어서 한 행으로 대표값을 만드는 연산`이다.
