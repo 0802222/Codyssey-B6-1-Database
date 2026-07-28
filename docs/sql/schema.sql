@@ -11,10 +11,12 @@ CREATE TABLE student (
 CREATE TABLE mission (
     id              BIGINT AUTO_INCREMENT PRIMARY KEY,
     title           VARCHAR(100) NOT NULL,
-    category        VARCHAR(50),
-    difficulty      VARCHAR(20),
+    category ENUM('SERVER_OPS', 'BACKEND', 'FRONTEND','DATA', 'AI_SERVING', 'WEB_BASIC') NOT NULL,
+    difficulty      TINYINT,
     estimated_hours INT,
-    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (difficulty BETWEEN 1 AND 5),
+    CHECK (estimated_hours >= 0)
 ) ENGINE=InnoDB;
 
 -- 3) 진도 관리
@@ -50,5 +52,6 @@ CREATE TABLE peer_review (
     CONSTRAINT fk_review_reviewee
         FOREIGN KEY (reviewee_student_id) REFERENCES student(id),
     CONSTRAINT uq_peer_review_unique_pair
-        UNIQUE (mission_id, reviewer_student_id, reviewee_student_id)
+        UNIQUE (mission_id, reviewer_student_id, reviewee_student_id),
+    CHECK (reviewer_student_id <> reviewee_student_id)
 ) ENGINE=InnoDB;
