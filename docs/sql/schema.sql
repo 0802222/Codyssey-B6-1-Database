@@ -15,8 +15,10 @@ CREATE TABLE mission (
     difficulty      TINYINT,
     estimated_hours INT,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CHECK (difficulty BETWEEN 1 AND 3),
-    CHECK (estimated_hours >= 0)
+    CONSTRAINT chk_mission_difficulty
+        CHECK (difficulty BETWEEN 1 AND 3),
+    CONSTRAINT chk_mission_hours        
+        CHECK (estimated_hours >= 0)
 ) ENGINE=InnoDB;
 
 -- 3) 진도 관리
@@ -32,8 +34,8 @@ CREATE TABLE mission_progress (
         FOREIGN KEY (student_id) REFERENCES student(id),
     CONSTRAINT fk_progress_mission
         FOREIGN KEY (mission_id) REFERENCES mission(id),
-    CONSTRAINT up_progress_student_mission
-        UNIQUE (student_id, mission_id, attempt_no);
+    CONSTRAINT up_progress_student_mission_attempt_no
+        UNIQUE (student_id, mission_id, attempt_no)
 ) ENGINE=InnoDB;
 
 -- 4) 동료평가
