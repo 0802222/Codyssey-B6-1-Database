@@ -1,11 +1,11 @@
-# B5-1 : SQL로 만드는 나만의 데이터베이스
+# B6-1 : SQL로 만드는 나만의 데이터베이스
 ## 미션 개요
 이 미션은 백엔드 프레임워크 없이, 도메인에 맞는 테이블 구조를 설계하고 직접 데이터를 넣고, 필요한 정보를 뽑는 전체 흐름을 실습한다.
 
 ## 폴더 구조
 
 ```text
-codyssey-b5-1/
+codyssey-B6-1/
 ├─ docs/
 │  ├─ sql/
 │  │  ├─ data.sql
@@ -18,13 +18,13 @@ codyssey-b5-1/
 │  │  ├─ 03_insert_data.sh
 │  │  └─ 04_execute_query.sh
 │  └─ screenshots/
-│     ├─ bg-1_ERD.png
-│     ├─ b5-1_mysql_started.png
-│     ├─ b5-1_schema_created.png
-│     ├─ b5-1_table_created.png
-│     ├─ b5-1_table_schema_described.png
-│     ├─ b5-1_data_inserted.png
-│     └─ b5-1_queries_result.png
+│     ├─ b6-1_ERD.png
+│     ├─ B6-1_mysql_started.png
+│     ├─ B6-1_schema_created.png
+│     ├─ B6-1_table_created.png
+│     ├─ B6-1_table_schema_described.png
+│     ├─ B6-1_data_inserted.png
+│     └─ B6-1_queries_result.png
 └─ README.md
 ```
 
@@ -96,8 +96,8 @@ orb
 # git clone & 쉘스크립트 실행
 sudo apt-get update \
   && sudo apt-get install -y git \
-  && git clone https://github.com/0802222/Codyssey-B5-1.git \
-  && cd Codyssey-B5-1 \
+  && git clone https://github.com/0802222/Codyssey-B6-1.git \
+  && cd Codyssey-B6-1 \
   && bash docs/scripts/provision.sh
 ```
 
@@ -147,7 +147,7 @@ sudo apt-get update \
     ```bash
     sudo systemctl status mysql
     ```
-    ![alt text](docs/screenshots/b5-1_mysql_started.png)
+    ![alt text](docs/screenshots/B6-1_mysql_started.png)
 
 ## 2. MySQL 접속
 1. 로그인
@@ -161,7 +161,7 @@ sudo apt-get update \
     SHOW DATABASES;
     ```
     
-    ![alt text](docs/screenshots/b5-1_schema_created.png)
+    ![alt text](docs/screenshots/B6-1_schema_created.png)
 
 
 ## 3. DB 생성
@@ -290,12 +290,12 @@ CREATE TABLE 테이블명 (
 DESC 테이블명;
 ```
 
-![alt text](docs/screenshots/b5-1_table_schema_described.png)
+![alt text](docs/screenshots/B6-1_table_schema_described.png)
 <br>
 <br>
 
 ## 5. ERD
-![alt text](docs/screenshots/b5-1_ERD.png)
+![alt text](docs/screenshots/B6-1_ERD.png)
 
 ## 6. 쿼리 실행 결과
 ## 6-1. 조회 (4개 이상)
